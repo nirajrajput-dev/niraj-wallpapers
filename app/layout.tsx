@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "Niraj Wallpapers",
@@ -14,7 +15,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: "#1a1a1a",
+              color: "#FDFDFD",
+              border: "1px solid #333",
+            },
+            success: {
+              iconTheme: {
+                primary: "#10b981",
+                secondary: "#FDFDFD",
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: "#ef4444",
+                secondary: "#FDFDFD",
+              },
+            },
+          }}
+        />
+      </body>
     </html>
   );
 }
