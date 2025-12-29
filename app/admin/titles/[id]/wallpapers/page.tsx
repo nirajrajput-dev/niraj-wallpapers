@@ -2,33 +2,35 @@ import WallpaperUpload from "@/components/admin/WallpaperUpload";
 import DeleteButton from "@/components/admin/DeleteButton";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+import connectDB from "@/lib/mongodb";
+import Title from "@/lib/models/Title";
+import Wallpaper from "@/lib/models/Wallpaper";
 
 async function getTitleWithWallpapers(id: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    await connectDB();
 
     // Get title
-    const titlesResponse = await fetch(`${baseUrl}/api/admin/titles`, {
-      cache: "no-store",
-    });
-    const titlesData = await titlesResponse.json();
-    const title = (titlesData.data || []).find((t: any) => t._id === id);
-
+    const title = await Title.findById(id).lean();
     if (!title) return null;
 
     // Get wallpapers
-    const wallpapersResponse = await fetch(
-      `${baseUrl}/api/titles/${title.slug}`,
-      {
-        cache: "no-store",
-      }
-    );
-    const wallpapersData = await wallpapersResponse.json();
+    const wallpapers = await Wallpaper.find({ titleId: id })
+      .sort({ createdAt: 1 })
+      .lean();
 
     return {
-      title,
-      wallpapers: wallpapersData.data?.wallpapers || [],
+      title: {
+        ...title,
+        _id: title._id.toString(),
+      },
+      wallpapers: wallpapers.map((w) => ({
+        ...w,
+        _id: w._id.toString(),
+        titleId: w.titleId.toString(),
+      })),
     };
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -41,6 +43,12 @@ export default async function ManageWallpapersPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // Check authentication
+  const session = await getSession();
+  if (!session.isLoggedIn) {
+    redirect("/admin/login");
+  }
+
   const { id } = await params;
   const data = await getTitleWithWallpapers(id);
 

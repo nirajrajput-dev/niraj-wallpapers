@@ -23,6 +23,7 @@ export default function DownloadButton({
     setIsDownloading(true);
 
     try {
+      // Call API to get download info and increment counter
       const response = await fetch(`/api/wallpapers/${wallpaperId}/download`, {
         method: "POST",
       });
@@ -33,14 +34,21 @@ export default function DownloadButton({
         throw new Error(data.message || "Download failed");
       }
 
-      // Create temporary link and trigger download
+      // Fetch the actual image as blob
+      const imageResponse = await fetch(data.data.originalUrl);
+      const blob = await imageResponse.blob();
+
+      // Create blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = data.data.originalUrl;
+      link.href = blobUrl;
       link.download = data.data.filename;
-      link.target = "_blank";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Clean up blob URL
+      window.URL.revokeObjectURL(blobUrl);
 
       toast.success("Download started!");
     } catch (error: any) {

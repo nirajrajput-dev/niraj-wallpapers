@@ -1,6 +1,14 @@
 import TitleForm from "@/components/admin/TitleForm";
+import { getSession } from "@/lib/session";
+import { redirect } from "next/navigation";
 
-export default function NewTitlePage() {
+export default async function NewTitlePage() {
+  // Check authentication
+  const session = await getSession();
+  if (!session.isLoggedIn) {
+    redirect("/admin/login");
+  }
+
   return (
     <div className="max-w-3xl">
       <div className="mb-8">

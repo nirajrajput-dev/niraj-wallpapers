@@ -1,20 +1,19 @@
 import TitleForm from "@/components/admin/TitleForm";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+import connectDB from "@/lib/mongodb";
+import Title from "@/lib/models/Title";
 
 async function getTitle(id: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const response = await fetch(`${baseUrl}/api/admin/titles`, {
-      cache: "no-store",
-    });
+    await connectDB();
+    const title = await Title.findById(id).lean();
+    if (!title) return null;
 
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    const titles = data.data || [];
-    return titles.find((t: any) => t._id === id) || null;
+    return {
+      ...title,
+      _id: title._id.toString(),
+    };
   } catch (error) {
     console.error("Error fetching title:", error);
     return null;
@@ -26,6 +25,12 @@ export default async function EditTitlePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // Check authentication
+  const session = await getSession();
+  if (!session.isLoggedIn) {
+    redirect("/admin/login");
+  }
+
   const { id } = await params;
   const title = await getTitle(id);
 
